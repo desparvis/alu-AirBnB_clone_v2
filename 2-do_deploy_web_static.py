@@ -1,61 +1,56 @@
 #!/usr/bin/python3
-"""Fabric script that distributes an archive to your web servers"""
-import warnings
-from cryptography.utils import CryptographyDeprecationWarning
-from fabric import Connection
-from os.path import exists
+"""Compress web static package
+"""
+from fabric.api import *
+from datetime import datetime
+from os import path
 
-warnings.filterwarnings(action='ignore', category=CryptographyDeprecationWarning)
 
-hosts = ["54.144.93.26", "3.80.93.124"]
-user = "ubuntu"
-key_filename = "~/.ssh/id_rsa"
+env.hosts = ['54.144.93.26', '3.80.93.124']
+env.user = 'ubuntu'
+env.key_filename = '~/.ssh/id_rsa'
+
 
 def do_deploy(archive_path):
-    """
-    Distributes an archive to your web servers.
+        """Deploy web files to server
+        """
+        try:
+                if not (path.exists(archive_path)):
+                        return False
 
-    Args:
-        archive_path (str): The path to the archive file to be distributed.
+                # upload archive
+                put(archive_path, '/tmp/')
 
-    Returns:
-        bool: True if all operations were successful, otherwise False.
+                # create target dir
+                timestamp = archive_path[-18:-4]
+                run('sudo mkdir -p /data/web_static/\
+releases/web_static_{}/'.format(timestamp))
 
-    The function performs the following steps:
-    1. Checks if the archive path exists.
-    2. Splits the archive path to extract the file name and base name.
-    3. Iterates over the hosts to perform the deployment steps:
-       a. Uploads the archive to the /tmp/ directory on the server.
-       b. Creates the necessary directory structure on the server.
-       c. Extracts the contents of the archive to the created directory.
-       d. Deletes the uploaded archive from the /tmp/ directory.
-       e. Moves the extracted files to the correct location.
-       f. Removes the temporary directory.
-       g. Deletes the old symbolic link to the web static content.
-       h. Creates a new symbolic link to the web static content.
-    """
-    if not exists(archive_path):
-        return False
-    try:
-        file_name = archive_path.split("/")[-1]
-        name = file_name.split(".")[0]
-        path_name = "/data/web_static/releases/" + name
-        
-        for host in hosts:
-            conn = Connection(host=host, user=user, connect_kwargs={"key_filename": key_filename})
-            conn.put(archive_path, "/tmp/")
-            conn.run("mkdir -p {}/".format(path_name))
-            conn.run('tar -xzf /tmp/{} -C {}/'.format(file_name, path_name))
-            conn.run("rm /tmp/{}".format(file_name))
-            conn.run("mv {}/web_static/* {}".format(path_name, path_name))
-            conn.run("rm -rf {}/web_static".format(path_name))
-            conn.run('rm -rf /data/web_static/current')
-            conn.run('ln -s {}/ /data/web_static/current'.format(path_name))
-        
+                # uncompress archive and delete .tgz
+                run('sudo tar -xzf /tmp/web_static_{}.tgz -C \
+/data/web_static/releases/web_static_{}/'
+                    .format(timestamp, timestamp))
+
+                # remove archive
+                run('sudo rm /tmp/web_static_{}.tgz'.format(timestamp))
+
+                # move contents into host web_static
+                run('sudo mv /data/web_static/releases/web_static_{}/web_static/* \
+/data/web_static/releases/web_static_{}/'.format(timestamp, timestamp))
+
+                # remove extraneous web_static dir
+                run('sudo rm -rf /data/web_static/releases/\
+web_static_{}/web_static'
+                    .format(timestamp))
+
+                # delete pre-existing sym link
+                run('sudo rm -rf /data/web_static/current')
+
+                # re-establish symbolic link
+                run('sudo ln -s /data/web_static/releases/\
+web_static_{}/ /data/web_static/current'.format(timestamp))
+        except:
+                return False
+
+        # return True on success
         return True
-    except Exception as e:
-        print(f"Deployment failed: {e}")
-        return False
-
-# Run the script like this:
-# $ python 2-do_deploy_web_static.py versions/file_name.tgz
