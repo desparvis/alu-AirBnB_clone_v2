@@ -11,26 +11,18 @@ hosts = ["54.144.93.26", "3.80.93.124"]
 user = "ubuntu"
 key_filename = "~/.ssh/id_rsa"
 
+"""
+function to deploy the archive to the web servers
+"""
 def do_deploy(archive_path):
     """
-    Deploy web files to the server.
+    Deploys the archive to web servers.
 
     Args:
-        archive_path (str): The path to the archive file to be deployed.
+        archive_path (str): Path to the archive file.
 
     Returns:
-        bool: True if all operations were successful, otherwise False.
-
-    The function performs the following steps:
-    1. Checks if the archive path exists.
-    2. Uploads the archive to the /tmp/ directory on the server.
-    3. Creates the necessary directory structure on the server.
-    4. Extracts the contents of the archive to the created directory.
-    5. Deletes the uploaded archive from the /tmp/ directory.
-    6. Moves the extracted files to the correct location.
-    7. Removes the extraneous web_static directory.
-    8. Deletes the old symbolic link to the web static content.
-    9. Creates a new symbolic link to the web static content.
+        bool: True if successful, False otherwise.
     """
     if not exists(archive_path):
         return False
