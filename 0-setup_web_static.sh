@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-#setting up
+#setting up everything
 
 # install nginx, add automatice yes (-y) 
 sudo apt-get -y update
