@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# This sets up the servers for deployment
+#setting up
 
 # install nginx, add automatice yes (-y) 
 sudo apt-get -y update
