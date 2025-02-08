@@ -12,7 +12,28 @@ user = "ubuntu"
 key_filename = "~/.ssh/id_rsa"
 
 def do_deploy(archive_path):
-    """Function to distribute an archive to your web servers"""
+    """
+    Distributes an archive to your web servers.
+
+    Args:
+        archive_path (str): The path to the archive file to be distributed.
+
+    Returns:
+        bool: True if all operations were successful, otherwise False.
+
+    The function performs the following steps:
+    1. Checks if the archive path exists.
+    2. Splits the archive path to extract the file name and base name.
+    3. Iterates over the hosts to perform the deployment steps:
+       a. Uploads the archive to the /tmp/ directory on the server.
+       b. Creates the necessary directory structure on the server.
+       c. Extracts the contents of the archive to the created directory.
+       d. Deletes the uploaded archive from the /tmp/ directory.
+       e. Moves the extracted files to the correct location.
+       f. Removes the temporary directory.
+       g. Deletes the old symbolic link to the web static content.
+       h. Creates a new symbolic link to the web static content.
+    """
     if not exists(archive_path):
         return False
     try:
